@@ -17,6 +17,7 @@ KEY_SAVE = "k"
 KEY_LOAD = "l"
 
 KEY_JUMP = "space"
+KEY_SET_PET = "m"
 
 
 class Hero:
@@ -111,7 +112,9 @@ class Hero:
             self.centerMouse()
 
         return task.cont
-
+    def set_pet(self):
+        pos = self.look_at()
+        self.land.buildPet(pos)
     def centerMouse(self):
         """Прячем курсор и ставим его в центр экрана."""
         wp = WindowProperties()
@@ -232,3 +235,4 @@ class Hero:
         base.accept(KEY_SAVE, self.land.saveMap)
         base.accept(KEY_LOAD, self.land.loadMap)
         base.accept(KEY_JUMP, self.jump)
+        base.accept(KEY_SET_PET, self.set_pet)
