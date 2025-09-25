@@ -1,5 +1,6 @@
 import pickle
-
+from panda3d.core import WindowProperties, Vec3
+from panda3d.core import Filename
 
 class Mapmanager():
    """ Управління карткою """
@@ -21,7 +22,7 @@ class Mapmanager():
    def startNew(self):
        """створює основу для нової карти"""
        self.land = render.attachNewNode("Land") # вузол, до якого прив'язані всі блоки картки
-
+       self.pets = render.attachNewNode("Pets")
 
    def getColor(self, z):
        if z < len(self.colors):
@@ -31,19 +32,20 @@ class Mapmanager():
 
 
    def addBlock(self, position):
-       # створюємо будівельні блоки
-       self.block = loader.loadModel(self.model)
-       self.block.setTexture(loader.loadTexture(self.texture))
-       self.block.setPos(position)
-       self.color = self.getColor(int(position[2]))
-       self.block.setColor(self.color)
-       self.block.setTag("at", str(position))
-       self.block.reparentTo(self.land)
+    block = loader.loadModel(self.model)
+    block.setTexture(loader.loadTexture(self.texture))
+    block.setPos(position)
+    block.setColor(self.getColor(int(position[2])))
+    key = f"{int(position[0])},{int(position[1])},{int(position[2])}"
+    block.setTag("at", key)
+    block.reparentTo(self.land)
+
 
 
    def clear(self):
        """обнулює карту"""
        self.land.removeNode()
+       self.pets.removeNode()
        self.startNew()
 
 
@@ -65,11 +67,34 @@ class Mapmanager():
     # NEW FOR LESSON 4
 
    def findBlocks(self, pos):
-       return self.land.findAllMatches("=at=" + str(pos))
+    key = f"{int(pos[0])},{int(pos[1])},{int(pos[2])}"
+    return self.land.findAllMatches("=at=" + key)
 
+   def addPet(self, position):
+    pet = loader.loadModel("panda")
+
+    if not pet:
+        print("❌ Не удалось загрузить модель паука.")
+        return
+
+    pet.setScale(0.1)
+    pet.setPos(position)
+    pet.setHpr(0, 0, 0)
+    pet.setTag("pet_at", str(position))  # Тэг для поиска
+    pet.reparentTo(self.pets)
+
+
+   def buildPet(self, pos):
+        x, y, z = pos
+        new = self.findHighestEmpty(pos)
+        if new[2] <= z + 1:
+            self.addPet(new)
+   def findPets(self, pos):
+        return self.pets.findAllMatches("=pet_at=" + str(pos))
    def isEmpty(self, pos):
        blocks = self.findBlocks(pos)
-       if blocks:
+       pets = self.findPets(pos)
+       if blocks or pets:
            return False
        else:
            return True
