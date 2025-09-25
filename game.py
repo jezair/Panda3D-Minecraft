@@ -3,6 +3,7 @@ from mapmanager import Mapmanager
 from panda3d.core import Vec4
 from hero import Hero
 import os
+from panda3d.core import Filename
 
 class Game(ShowBase):
     def __init__(self):
@@ -34,9 +35,9 @@ class Game(ShowBase):
                 ys = [p[1] for p in positions]
                 cx = int((min(xs) + max(xs)) / 2)
                 cy = int((min(ys) + max(ys)) / 2)
-                start_pos = (cx, cy, 5)
+                start_pos = (cx, cy, 50)
             else:
-                start_pos = (10, 10, 5)
+                start_pos = (10, 10, 50)
         else:
             # если сохранения нет — загружаем land.txt (твоя текущая логика)
             x, y = self.land.loadLand("land.txt")
@@ -44,7 +45,7 @@ class Game(ShowBase):
 
         # ===== Музыка и небо =====
         try:
-            self.music = self.loader.loadMusic("minecraft-run-music-394978.mp3")
+            self.music = self.loader.loadMusic(os.path.join("subwoofer-lullaby-m.mp3"))
             self.music.setVolume(0.5)
             self.music.setLoop(True)
             self.music.play()
