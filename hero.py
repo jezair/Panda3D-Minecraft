@@ -1,5 +1,7 @@
 from panda3d.core import WindowProperties, Vec3
 from direct.showbase.InputStateGlobal import inputState
+from direct.interval.LerpInterval import LerpPosInterval
+from direct.task import Task
 
 # --- КЛАВИШИ ---
 KEY_FORWARD = 'w'  # движение назад (инверсия управления)
@@ -17,43 +19,67 @@ KEY_SAVE = "k"
 KEY_LOAD = "l"
 
 KEY_JUMP = "space"
+KEY_SET_PET = "m"
 
 
 class Hero:
     def __init__(self, pos, land):
-        self.land = land  # карта (не используется, но пригодится)
-
-        # создаём модель героя (смiley-шарик)
+        self.land = land  
         self.hero = loader.loadModel('smiley')
-        self.hero.setColor(1, 0.5, 0)  # оранжевый
-        self.hero.setScale(0.3)  # уменьшаем
-        self.hero.setPos(pos)  # позиция в мире
-        self.hero.reparentTo(render)  # добавляем в сцену
+        self.hero.setColor(1, 0.5, 0)
+        self.hero.setScale(0.3)
+        self.hero.setPos(pos)
+        self.hero.reparentTo(render)
 
-        # привязываем камеру к герою (режим от первого лица)
         self.cameraBind()
-
-        # назначаем управление
         self.accept_events()
 
-        # параметры
-        self.speed = 7  # скорость передвижения
-        self.sensitivity = 0.13  # чувствительность мыши
-
+        self.speed = 7
+        self.sensitivity = 0.13
         self.vz = 0
         self.gravity = -10
         self.jump_speed = 5
         self.on_ground = False
 
+        # питомец
+        self.pet = None  
 
-        # настройка мыши
         self.centerMouse()
-
-        # задачи, выполняемые каждый кадр
-        taskMgr.add(self.update_camera, "update_camera")  # обработка мыши
-        taskMgr.add(self.update_movement, "update_movement")  # обработка клавиш
-
+        taskMgr.add(self.update_camera, "update_camera")
+        taskMgr.add(self.update_movement, "update_movement")
+        taskMgr.add(self.update_pet, "update_pet")  # движение питомца
     # ---------- КАМЕРА ----------
+    def set_pet(self):
+        """Создание питомца рядом с героем"""
+        if not self.pet:
+            pos = self.hero.getPos() + Vec3(1, 1, 0)  # немного сбоку
+            self.pet = loader.loadModel("panda")
+            self.pet.setScale(0.1)
+            self.pet.setPos(pos)
+            self.pet.reparentTo(render)
+            print("Питомец создан ✅")
+        else:
+            print("Питомец уже есть")
+
+    def update_pet(self, task):
+        """Питомец идёт за героем"""
+        if self.pet:
+            hero_pos = self.hero.getPos()
+            pet_pos = self.pet.getPos()
+
+            # расстояние до героя
+            dist = (hero_pos - pet_pos).length()
+
+            if dist > 2:  # если далеко — двигаться ближе
+                direction = (hero_pos - pet_pos)
+                direction.normalize()
+                step = direction * globalClock.getDt() * 3  # скорость петы
+                self.pet.setPos(pet_pos + step)
+
+                # поворот мордочкой к герою
+                self.pet.lookAt(self.hero)
+
+        return task.cont
     def cameraBind(self):
         """Привязать камеру к герою (вид от первого лица)."""
         base.disableMouse()  # отключаем встроенное управление камерой
@@ -111,7 +137,6 @@ class Hero:
             self.centerMouse()
 
         return task.cont
-
     def centerMouse(self):
         """Прячем курсор и ставим его в центр экрана."""
         wp = WindowProperties()
@@ -232,3 +257,4 @@ class Hero:
         base.accept(KEY_SAVE, self.land.saveMap)
         base.accept(KEY_LOAD, self.land.loadMap)
         base.accept(KEY_JUMP, self.jump)
+        base.accept(KEY_SET_PET, self.set_pet)
