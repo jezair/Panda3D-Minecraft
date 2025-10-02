@@ -1,5 +1,7 @@
 from panda3d.core import WindowProperties, Vec3
 from direct.showbase.InputStateGlobal import inputState
+from direct.interval.LerpInterval import LerpPosInterval
+from direct.task import Task
 
 # --- КЛАВИШИ ---
 KEY_FORWARD = 'w'  # движение назад (инверсия управления)
@@ -7,8 +9,9 @@ KEY_BACK = 's'  # движение вперёд
 KEY_LEFT = 'a'  # движение вправо
 KEY_RIGHT = 'd'  # движение влево
 KEY_SWITCH_CAMERA = 'c'  # переключение вида камеры
-#KEY_UP = 'space'  # полёт вверх
+KEY_UP = 'space'  # полёт вверх
 KEY_DOWN = 'shift'  # полёт вниз
+KEY_RUN = 'e'
 
 KEY_BUILD = "b"
 KEY_DESTROY = "v"
@@ -17,27 +20,27 @@ KEY_SAVE = "k"
 KEY_LOAD = "l"
 
 KEY_JUMP = "space"
+KEY_SET_PET = "m"
 
 
 class Hero:
     def __init__(self, pos, land):
-        self.land = land  # карта (не используется, но пригодится)
-
-        # создаём модель героя (смiley-шарик)
+        self.land = land  
         self.hero = loader.loadModel('smiley')
-        self.hero.setColor(1, 0.5, 0)  # оранжевый
-        self.hero.setScale(0.3)  # уменьшаем
-        self.hero.setPos(pos)  # позиция в мире
-        self.hero.reparentTo(render)  # добавляем в сцену
+        self.hero.setColor(1, 0.5, 0)
+        self.hero.setScale(0.3)
+        self.hero.setPos(pos)
+        self.hero.reparentTo(render)
 
-        # привязываем камеру к герою (режим от первого лица)
         self.cameraBind()
-
-        # назначаем управление
         self.accept_events()
 
+
+        self.speed = 7
+        self.sensitivity = 0.13
+
         # параметры
-        self.speed = 7  # скорость передвижения
+        self.speed = 7  # базовая скорость передвижения
         self.sensitivity = 0.13  # чувствительность мыши
 
         self.vz = 0
@@ -45,15 +48,48 @@ class Hero:
         self.jump_speed = 5
         self.on_ground = False
 
+        # питомец
+        self.pet = None  
 
-        # настройка мыши
+        self.run_speed = 2    # множитель бега
+
+
         self.centerMouse()
-
-        # задачи, выполняемые каждый кадр
-        taskMgr.add(self.update_camera, "update_camera")  # обработка мыши
-        taskMgr.add(self.update_movement, "update_movement")  # обработка клавиш
-
+        taskMgr.add(self.update_camera, "update_camera")
+        taskMgr.add(self.update_movement, "update_movement")
+        taskMgr.add(self.update_pet, "update_pet")  # движение питомца
     # ---------- КАМЕРА ----------
+    def set_pet(self):
+        """Создание питомца рядом с героем"""
+        if not self.pet:
+            pos = self.hero.getPos() + Vec3(1, 1, 0)  # немного сбоку
+            self.pet = loader.loadModel("panda")
+            self.pet.setScale(0.1)
+            self.pet.setPos(pos)
+            self.pet.reparentTo(render)
+            print("Питомец создан ✅")
+        else:
+            print("Питомец уже есть")
+
+    def update_pet(self, task):
+        """Питомец идёт за героем"""
+        if self.pet:
+            hero_pos = self.hero.getPos()
+            pet_pos = self.pet.getPos()
+
+            # расстояние до героя
+            dist = (hero_pos - pet_pos).length()
+
+            if dist > 2:  # если далеко — двигаться ближе
+                direction = (hero_pos - pet_pos)
+                direction.normalize()
+                step = direction * globalClock.getDt() * 3  # скорость петы
+                self.pet.setPos(pet_pos + step)
+
+                # поворот мордочкой к герою
+                self.pet.lookAt(self.hero)
+
+        return task.cont
     def cameraBind(self):
         """Привязать камеру к герою (вид от первого лица)."""
         base.disableMouse()  # отключаем встроенное управление камерой
@@ -111,7 +147,6 @@ class Hero:
             self.centerMouse()
 
         return task.cont
-
     def centerMouse(self):
         """Прячем курсор и ставим его в центр экрана."""
         wp = WindowProperties()
@@ -138,20 +173,23 @@ class Hero:
         if inputState.isSet(KEY_RIGHT):
             direction.x -= 1  # D = влево
 
+        # бег
+        current_speed = self.speed  # стандартная скорость
+        if inputState.isSet(KEY_RUN):
+            current_speed *= self.run_speed  # умножаем на множитель бега
 
         # если есть движение
         if direction.length() > 0:
             direction.normalize()
-            direction *= self.speed * dt# делаем вектор длиной 1
+            direction *= current_speed * dt  # используем текущую скорость
             # переводим направление из локальных координат героя в глобальные
             new_pos = self.hero.getPos() + render.getRelativeVector(self.hero, direction)
             # обновляем позицию героя
             target_block = (round(new_pos.x), round(new_pos.y), round(self.hero.getZ()))
             if self.land.isEmpty(target_block):
                 self.hero.setPos(new_pos)
-            else:
-                pass
 
+        # --- гравитация и прыжок ---
         self.vz += self.gravity * dt
         new_z = self.hero.getZ() + self.vz * dt
 
@@ -167,7 +205,6 @@ class Hero:
             self.hero.setZ(new_z)
             self.on_ground = False
 
-
         return task.cont
 
     def jump(self):
@@ -176,7 +213,6 @@ class Hero:
             self.on_ground = False
 
     # ---------- СТРОИТЕЛЬСТВО / ЛОМАНИЕ ----------
-    # NEW
     def look_at(self):
         """Возвращает координаты блока перед героем"""
         angle = self.hero.getH() % 360
@@ -223,6 +259,7 @@ class Hero:
         inputState.watchWithModifiers(KEY_LEFT, KEY_LEFT)
         inputState.watchWithModifiers(KEY_RIGHT, KEY_RIGHT)
         inputState.watchWithModifiers(KEY_DOWN, KEY_DOWN)
+        inputState.watchWithModifiers(KEY_RUN, KEY_RUN)
 
         base.accept(KEY_SWITCH_CAMERA, self.changeView)
 
@@ -232,3 +269,5 @@ class Hero:
         base.accept(KEY_SAVE, self.land.saveMap)
         base.accept(KEY_LOAD, self.land.loadMap)
         base.accept(KEY_JUMP, self.jump)
+
+        base.accept(KEY_SET_PET, self.set_pet)

@@ -1,9 +1,11 @@
 from direct.showbase.ShowBase import ShowBase
 from mapmanager import Mapmanager
-from panda3d.core import Vec4
+from panda3d.core import Vec4, Filename, PNMImage
 from hero import Hero
 import os
-from panda3d.core import Filename
+
+import sys
+import datetime
 
 class Game(ShowBase):
     def __init__(self):
@@ -11,16 +13,12 @@ class Game(ShowBase):
         self.land = Mapmanager()
 
         # Если есть saved_map.dat — загружаем его через loadMap().
-        # Иначе — загружаем обычный мир land.txt через loadLand().
         if os.path.exists("saved_map.dat"):
             print("Found saved_map.dat — loading saved map")
             try:
-                # loadMap() у тебя читает saved_map.dat и создаёт блоки
                 self.land.loadMap()
             except Exception as e:
                 print("Error during loadMap():", e)
-            # Попробуем вычислить центр карты по существующим блокам,
-            # чтобы поставить героя в центр сохранённой области.
             try:
                 children = list(self.land.getChildren())
                 positions = []
@@ -39,13 +37,13 @@ class Game(ShowBase):
             else:
                 start_pos = (10, 10, 100)
         else:
-            # если сохранения нет — загружаем land.txt (твоя текущая логика)
             x, y = self.land.loadLand("land.txt")
             start_pos = (x // 2, y // 2, 5)
 
         # ===== Музыка и небо =====
         try:
-            self.music = self.loader.loadMusic(os.path.join("subwoofer-lullaby-m.mp3"))
+            self.music = self.loader.loadMusic(os.path.join("minecraft-music.mp3"))
+
             self.music.setVolume(0.5)
             self.music.setLoop(True)
             self.music.play()
@@ -68,15 +66,57 @@ class Game(ShowBase):
         # При нажатии ESC — сохраняем через saveMap() и выходим.
         self.accept("escape", self.save_and_exit)
 
+        # ===== Скриншоты =====
+        width, height = 1280, 720
+        self.buffer = self.win.makeTextureBuffer("screenshot_buffer", width, height)
+
+        if not self.buffer:
+            print("Ошибка: не удалось создать offscreen буфер")
+        else:
+            self.side_cam = self.makeCamera(self.buffer)
+            self.side_cam.reparentTo(self.render)
+            self.side_cam.setPos(20, -30, 15)
+            self.side_cam.setHpr(15, -10, 0)
+
+        self.accept("f2", self.take_screenshot)
+
     def save_and_exit(self):
         try:
-            # saveMap() у тебя сохраняет в saved_map.dat
             self.land.saveMap()
             print("Map saved to saved_map.dat")
         except Exception as e:
             print("Error saving map:", e)
-        # корректный выход из Panda3D
         self.userExit()
+
+    # ===== Метод для скриншотов =====
+    def take_screenshot(self):
+        base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        screenshot_dir = os.path.join(base_dir, "screenshots")
+        os.makedirs(screenshot_dir, exist_ok=True)
+
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = os.path.join(screenshot_dir, f"screenshot_{timestamp}.png")
+
+        self.graphicsEngine.renderFrame()
+        self.graphicsEngine.flipFrame()
+
+        if not self.buffer:
+            print("Немає буфера для скриншотів")
+            return
+
+        ok = self.buffer.saveScreenshot(Filename.fromOsSpecific(filename))
+        if ok:
+            print(f"[OK] Скриншот збереженно: {filename}")
+            return
+        else:
+            print("[!] saveScreenshot не спрацював.")
+
+        img = PNMImage()
+        if self.buffer.getScreenshot(img):
+            img.write(Filename.fromOsSpecific(filename))
+            print(f"[OK] Скриншот готов): {filename}")
+        else:
+            print("[X] не вдалось зберегти")
 
 
 if __name__ == "__main__":
