@@ -3,9 +3,9 @@ from mapmanager import Mapmanager
 from panda3d.core import Vec4, Filename, PNMImage
 from hero import Hero
 import os
+
 import sys
 import datetime
-
 
 class Game(ShowBase):
     def __init__(self):
@@ -33,16 +33,17 @@ class Game(ShowBase):
                 ys = [p[1] for p in positions]
                 cx = int((min(xs) + max(xs)) / 2)
                 cy = int((min(ys) + max(ys)) / 2)
-                start_pos = (cx, cy, 5)
+                start_pos = (cx, cy, 100)
             else:
-                start_pos = (10, 10, 5)
+                start_pos = (10, 10, 100)
         else:
             x, y = self.land.loadLand("land.txt")
             start_pos = (x // 2, y // 2, 5)
 
         # ===== Музыка и небо =====
         try:
-            self.music = self.loader.loadMusic("minecraft-music.mp3")
+            self.music = self.loader.loadMusic(os.path.join("minecraft-music.mp3"))
+
             self.music.setVolume(0.5)
             self.music.setLoop(True)
             self.music.play()
