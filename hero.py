@@ -7,8 +7,9 @@ KEY_BACK = 's'  # движение вперёд
 KEY_LEFT = 'a'  # движение вправо
 KEY_RIGHT = 'd'  # движение влево
 KEY_SWITCH_CAMERA = 'c'  # переключение вида камеры
-#KEY_UP = 'space'  # полёт вверх
+KEY_UP = 'space'  # полёт вверх
 KEY_DOWN = 'shift'  # полёт вниз
+KEY_RUN = 'e'
 
 KEY_BUILD = "b"
 KEY_DESTROY = "v"
@@ -37,14 +38,14 @@ class Hero:
         self.accept_events()
 
         # параметры
-        self.speed = 7  # скорость передвижения
+        self.speed = 7  # базовая скорость передвижения
         self.sensitivity = 0.13  # чувствительность мыши
 
         self.vz = 0
         self.gravity = -10
         self.jump_speed = 5
         self.on_ground = False
-
+        self.run_speed = 2    # множитель бега
 
         # настройка мыши
         self.centerMouse()
@@ -138,20 +139,23 @@ class Hero:
         if inputState.isSet(KEY_RIGHT):
             direction.x -= 1  # D = влево
 
+        # бег
+        current_speed = self.speed  # стандартная скорость
+        if inputState.isSet(KEY_RUN):
+            current_speed *= self.run_speed  # умножаем на множитель бега
 
         # если есть движение
         if direction.length() > 0:
             direction.normalize()
-            direction *= self.speed * dt# делаем вектор длиной 1
+            direction *= current_speed * dt  # используем текущую скорость
             # переводим направление из локальных координат героя в глобальные
             new_pos = self.hero.getPos() + render.getRelativeVector(self.hero, direction)
             # обновляем позицию героя
             target_block = (round(new_pos.x), round(new_pos.y), round(self.hero.getZ()))
             if self.land.isEmpty(target_block):
                 self.hero.setPos(new_pos)
-            else:
-                pass
 
+        # --- гравитация и прыжок ---
         self.vz += self.gravity * dt
         new_z = self.hero.getZ() + self.vz * dt
 
@@ -167,7 +171,6 @@ class Hero:
             self.hero.setZ(new_z)
             self.on_ground = False
 
-
         return task.cont
 
     def jump(self):
@@ -176,7 +179,6 @@ class Hero:
             self.on_ground = False
 
     # ---------- СТРОИТЕЛЬСТВО / ЛОМАНИЕ ----------
-    # NEW
     def look_at(self):
         """Возвращает координаты блока перед героем"""
         angle = self.hero.getH() % 360
@@ -223,6 +225,7 @@ class Hero:
         inputState.watchWithModifiers(KEY_LEFT, KEY_LEFT)
         inputState.watchWithModifiers(KEY_RIGHT, KEY_RIGHT)
         inputState.watchWithModifiers(KEY_DOWN, KEY_DOWN)
+        inputState.watchWithModifiers(KEY_RUN, KEY_RUN)
 
         base.accept(KEY_SWITCH_CAMERA, self.changeView)
 
@@ -232,3 +235,4 @@ class Hero:
         base.accept(KEY_SAVE, self.land.saveMap)
         base.accept(KEY_LOAD, self.land.loadMap)
         base.accept(KEY_JUMP, self.jump)
+
