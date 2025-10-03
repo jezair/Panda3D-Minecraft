@@ -51,7 +51,7 @@ class Game(ShowBase):
             print("Music load error:", e)
 
         try:
-            self.sky = self.loader.loadModel("block.egg")
+            self.sky = self.loader.loadModel("assets/block.egg")
             self.sky.reparentTo(self.render)
             base.setBackgroundColor(Vec4(0.5, 0.7, 1, 1))
             self.sky.setScale(500)

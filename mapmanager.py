@@ -5,7 +5,7 @@ class Mapmanager():
     """ Управління карткою з різними текстурами """
     def __init__(self):
         # модель кубика
-        self.model = 'block'  # block.egg
+        self.model = 'assets/block'  # block.egg
         # словарь текстур для разных типов блоков
         self.textures = {
             "Grass": loader.loadTexture("assets/Grass.png"),
