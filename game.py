@@ -13,7 +13,7 @@ class Game(ShowBase):
         self.land = Mapmanager()
 
         # Если есть saved_map.dat — загружаем его через loadMap().
-        if os.path.exists("saved_map.dat"):
+        if os.path.exists("saves/saved_map.dat"):
             print("Found saved_map.dat — loading saved map")
             try:
                 self.land.loadMap()
@@ -42,7 +42,7 @@ class Game(ShowBase):
 
         # ===== Музыка и небо =====
         try:
-            self.music = self.loader.loadMusic(os.path.join("minecraft-music.mp3"))
+            self.music = self.loader.loadMusic(os.path.join("music/minecraft-music.mp3"))
 
             self.music.setVolume(0.5)
             self.music.setLoop(True)

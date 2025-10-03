@@ -9,8 +9,8 @@ import tkinter.messagebox as mb
 class SaveSlotManager:
     def __init__(self):
         self.PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-        self.SLOTS = ["save1.dat", "save2.dat", "save3.dat", "save4.dat", "save5.dat"]
-        self.WORK_SAVE = os.path.join(self.PROJECT_DIR, "saved_map.dat")
+        self.SLOTS = ["saves/save1.dat", "saves/save2.dat", "saves/save3.dat", "saves/save4.dat", "saves/save5.dat"]
+        self.WORK_SAVE = os.path.join(self.PROJECT_DIR, "saves/saved_map.dat")
         self.GAME_PY = os.path.join(self.PROJECT_DIR, "game.py")
 
         self.root = tk.Tk()

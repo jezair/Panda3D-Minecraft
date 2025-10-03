@@ -112,7 +112,7 @@ class Mapmanager():
     # --- сохранение / загрузка ---
     def saveMap(self):
         blocks = self.land.getChildren()
-        with open("saved_map.dat", "wb") as saved_map:
+        with open("saves/saved_map.dat", "wb") as saved_map:
             pickle.dump(len(blocks), saved_map)
             for block in blocks:
                 x,y,z = block.getPos()
@@ -122,7 +122,7 @@ class Mapmanager():
     def loadMap(self):
         self.clear()
         try:
-            with open("saved_map.dat", "rb") as sm:
+            with open("saves/saved_map.dat", "rb") as sm:
                 length = pickle.load(sm)
                 for _ in range(length):
                     pos = pickle.load(sm)
