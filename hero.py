@@ -19,15 +19,18 @@ KEY_DESTROY = "v"
 KEY_SAVE = "k"
 KEY_LOAD = "l"
 
-KEY_JUMP = "space"
+KEY_JUMP = 'space'
 KEY_SET_PET = "m"
 
 
 class Hero:
     def __init__(self, pos, land):
         self.land = land
-        self.hero = loader.loadModel('smiley')
-        self.hero.setColor(1, 0.5, 0)
+
+        # --- Герой с текстурой ---
+        self.hero = loader.loadModel('smiley')  # сфера
+        tex = loader.loadTexture("head_front.jpg")  # текстура лица
+        self.hero.setTexture(tex, 1)
         self.hero.setScale(0.3)
         self.hero.setPos(pos)
         self.hero.reparentTo(render)
@@ -35,14 +38,10 @@ class Hero:
         self.cameraBind()
         self.accept_events()
 
-
         self.speed = 7
         self.sensitivity = 0.13
 
-        # параметры
-        self.speed = 7  # базовая скорость передвижения
-        self.sensitivity = 0.13  # чувствительность мыши
-
+        # параметры движения
         self.vz = 0
         self.gravity = -10
         self.jump_speed = 5
@@ -51,18 +50,18 @@ class Hero:
         # питомец
         self.pet = None
 
-        self.run_speed = 2    # множитель бега
-
+        self.run_speed = 2  # множитель бега
 
         self.centerMouse()
         taskMgr.add(self.update_camera, "update_camera")
         taskMgr.add(self.update_movement, "update_movement")
         taskMgr.add(self.update_pet, "update_pet")  # движение питомца
+
     # ---------- КАМЕРА ----------
     def set_pet(self):
         """Создание питомца рядом с героем"""
         if not self.pet:
-            pos = self.hero.getPos() + Vec3(1, 1, 0)  # немного сбоку
+            pos = self.hero.getPos() + Vec3(1, 1, 0)
             self.pet = loader.loadModel("panda")
             self.pet.setScale(0.1)
             self.pet.setPos(pos)
@@ -76,129 +75,86 @@ class Hero:
         if self.pet:
             hero_pos = self.hero.getPos()
             pet_pos = self.pet.getPos()
-
-            # расстояние до героя
             dist = (hero_pos - pet_pos).length()
-
-            if dist > 2:  # если далеко — двигаться ближе
+            if dist > 2:
                 direction = (hero_pos - pet_pos)
                 direction.normalize()
-                step = direction * globalClock.getDt() * 3  # скорость петы
+                step = direction * globalClock.getDt() * 3
                 self.pet.setPos(pet_pos + step)
-
-                # поворот мордочкой к герою
                 self.pet.lookAt(self.hero)
-
         return task.cont
+
     def cameraBind(self):
-        """Привязать камеру к герою (вид от первого лица)."""
-        base.disableMouse()  # отключаем встроенное управление камерой
-        base.camera.setH(180)  # поворот (смотрим вперёд)
-        base.camera.reparentTo(self.hero)  # камера прикреплена к герою
-        base.camera.setPos(0, 0, 2)  # камера чуть выше "глаз"
+        """Привязка камеры к герою (вид от первого лица)."""
+        base.disableMouse()
+        base.camera.setH(180)
+        base.camera.reparentTo(self.hero)
+        base.camera.setPos(0, 0, 2)
         self.cameraOn = True
 
     def cameraUp(self):
-        """Отключить привязку камеры (свободный полёт камерой)."""
+        """Свободный полёт камерой."""
         pos = self.hero.getPos()
         base.mouseInterfaceNode.setPos(-pos[0], -pos[1], -pos[2] - 3)
-        base.camera.reparentTo(render)  # отвязываем камеру
-        base.enableMouse()  # включаем стандартное управление
-
-        # включаем курсор
+        base.camera.reparentTo(render)
+        base.enableMouse()
         wp = WindowProperties()
         wp.setCursorHidden(False)
         base.win.requestProperties(wp)
-
         self.cameraOn = False
 
     def changeView(self):
-        """Переключение между режимом от первого лица и свободной камерой."""
+        """Переключение вида камеры."""
         if self.cameraOn:
             self.cameraUp()
         else:
             self.cameraBind()
 
     def update_camera(self, task):
-        """Обработка движения мыши: вращение героя и камеры."""
         if self.cameraOn and base.mouseWatcherNode.hasMouse():
-            # получаем текущее положение мыши
             md = base.win.getPointer(0)
-            x = md.getX()
-            y = md.getY()
-
-            # центр экрана
-            cx = base.win.getXSize() // 2
-            cy = base.win.getYSize() // 2
-
-            # смещение мыши от центра
-            dx = (x - cx) * self.sensitivity
-            dy = (y - cy) * self.sensitivity
-
-            # поворот героя вокруг оси (Yaw — влево/вправо)
+            x, y = md.getX(), md.getY()
+            cx, cy = base.win.getXSize()//2, base.win.getYSize()//2
+            dx, dy = (x - cx) * self.sensitivity, (y - cy) * self.sensitivity
             self.hero.setH(self.hero.getH() - dx)
-
-            # поворот камеры вверх/вниз (Pitch), ограниченный углами
-            new_pitch = base.camera.getP() - dy
-            new_pitch = max(-60, min(60, new_pitch))  # ограничиваем угол
+            new_pitch = max(-60, min(60, base.camera.getP() - dy))
             base.camera.setP(new_pitch)
-
-            # возвращаем мышь в центр
             self.centerMouse()
-
         return task.cont
+
     def centerMouse(self):
-        """Прячем курсор и ставим его в центр экрана."""
         wp = WindowProperties()
         wp.setCursorHidden(True)
         base.win.requestProperties(wp)
-
-        cx = base.win.getXSize() // 2
-        cy = base.win.getYSize() // 2
-        base.win.movePointer(0, cx, cy)
+        base.win.movePointer(0, base.win.getXSize()//2, base.win.getYSize()//2)
 
     # ---------- ДВИЖЕНИЕ ----------
     def update_movement(self, task):
-        """Обновляем положение героя по зажатым клавишам."""
-        dt = globalClock.getDt()  # время с прошлого кадра (для плавности)
-        direction = Vec3(0, 0, 0)  # направление движения
+        dt = globalClock.getDt()
+        direction = Vec3(0, 0, 0)
+        if inputState.isSet(KEY_FORWARD): direction.y -= 1
+        if inputState.isSet(KEY_BACK): direction.y += 1
+        if inputState.isSet(KEY_LEFT): direction.x += 1
+        if inputState.isSet(KEY_RIGHT): direction.x -= 1
 
-        # инверсия управления
-        if inputState.isSet(KEY_FORWARD):
-            direction.y -= 1  # W = назад
-        if inputState.isSet(KEY_BACK):
-            direction.y += 1  # S = вперёд
-        if inputState.isSet(KEY_LEFT):
-            direction.x += 1  # A = вправо
-        if inputState.isSet(KEY_RIGHT):
-            direction.x -= 1  # D = влево
-
-        # бег
-        current_speed = self.speed  # стандартная скорость
+        current_speed = self.speed
         if inputState.isSet(KEY_RUN):
-            current_speed *= self.run_speed  # умножаем на множитель бега
+            current_speed *= self.run_speed
 
-        # если есть движение
         if direction.length() > 0:
             direction.normalize()
-            direction *= current_speed * dt  # используем текущую скорость
-            # переводим направление из локальных координат героя в глобальные
+            direction *= current_speed * dt
             new_pos = self.hero.getPos() + render.getRelativeVector(self.hero, direction)
-            # обновляем позицию героя
             target_block = (round(new_pos.x), round(new_pos.y), round(self.hero.getZ()))
             if self.land.isEmpty(target_block):
                 self.hero.setPos(new_pos)
 
-        # --- гравитация и прыжок ---
+        # гравитация
         self.vz += self.gravity * dt
         new_z = self.hero.getZ() + self.vz * dt
-
-        foot_x = round(self.hero.getX())
-        foot_y = round(self.hero.getY())
-        foot_z = round(new_z - 0.5)
-
-        if not self.land.isEmpty((foot_x, foot_y, foot_z)):
-            self.hero.setZ(foot_z + 1)
+        foot = (round(self.hero.getX()), round(self.hero.getY()), round(new_z - 0.5))
+        if not self.land.isEmpty(foot):
+            self.hero.setZ(foot[2] + 1)
             self.vz = 0
             self.on_ground = True
         else:
@@ -214,34 +170,21 @@ class Hero:
 
     # ---------- СТРОИТЕЛЬСТВО / ЛОМАНИЕ ----------
     def look_at(self):
-        """Возвращает координаты блока перед героем"""
         angle = self.hero.getH() % 360
-        x_from = round(self.hero.getX())
-        y_from = round(self.hero.getY())
-        z_from = round(self.hero.getZ())
-
+        x, y, z = round(self.hero.getX()), round(self.hero.getY()), round(self.hero.getZ())
         dx, dy = self.check_dir(angle)
-        return x_from + dx, y_from + dy, z_from
+        return x + dx, y + dy, z
 
     def check_dir(self, angle):
-        """Определяет направление по углу (ось X/Y)."""
-        if 0 <= angle <= 20 or angle >= 340:
-            return (0, -1)
-        elif angle <= 65:
-            return (1, -1)
-        elif angle <= 110:
-            return (1, 0)
-        elif angle <= 155:
-            return (1, 1)
-        elif angle <= 200:
-            return (0, 1)
-        elif angle <= 245:
-            return (-1, 1)
-        elif angle <= 290:
-            return (-1, 0)
-        elif angle <= 335:
-            return (-1, -1)
-        return (0, -1)
+        if 0 <= angle <= 20 or angle >= 340: return 0, -1
+        elif angle <= 65: return 1, -1
+        elif angle <= 110: return 1, 0
+        elif angle <= 155: return 1, 1
+        elif angle <= 200: return 0, 1
+        elif angle <= 245: return -1, 1
+        elif angle <= 290: return -1, 0
+        elif angle <= 335: return -1, -1
+        return 0, -1
 
     def build(self):
         pos = self.look_at()
@@ -253,7 +196,6 @@ class Hero:
 
     # ---------- СОБЫТИЯ ----------
     def accept_events(self):
-        """Регистрируем слежение за клавишами."""
         inputState.watchWithModifiers(KEY_FORWARD, KEY_FORWARD)
         inputState.watchWithModifiers(KEY_BACK, KEY_BACK)
         inputState.watchWithModifiers(KEY_LEFT, KEY_LEFT)
@@ -262,12 +204,10 @@ class Hero:
         inputState.watchWithModifiers(KEY_RUN, KEY_RUN)
 
         base.accept(KEY_SWITCH_CAMERA, self.changeView)
-
         base.accept(KEY_BUILD, self.build)
         base.accept(KEY_DESTROY, self.destroy)
-
         base.accept(KEY_SAVE, self.land.saveMap)
         base.accept(KEY_LOAD, self.land.loadMap)
         base.accept(KEY_JUMP, self.jump)
-
         base.accept(KEY_SET_PET, self.set_pet)
+
