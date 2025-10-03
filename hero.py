@@ -3,14 +3,14 @@ from direct.showbase.InputStateGlobal import inputState
 from direct.interval.LerpInterval import LerpPosInterval
 from direct.task import Task
 
-# --- КЛАВИШИ ---
-KEY_FORWARD = 'w'  # движение назад (инверсия управления)
-KEY_BACK = 's'  # движение вперёд
-KEY_LEFT = 'a'  # движение вправо
-KEY_RIGHT = 'd'  # движение влево
-KEY_SWITCH_CAMERA = 'c'  # переключение вида камеры
-KEY_UP = 'space'  # полёт вверх
-KEY_DOWN = 'shift'  # полёт вниз
+# ===== КЛАВІШІ =====
+KEY_FORWARD = 'w'
+KEY_BACK = 's'
+KEY_LEFT = 'a'
+KEY_RIGHT = 'd'
+KEY_SWITCH_CAMERA = 'c'
+KEY_UP = 'space'
+KEY_DOWN = 'shift'
 KEY_RUN = 'e'
 
 KEY_BUILD = "b"
@@ -24,54 +24,52 @@ KEY_SET_PET = "m"
 
 
 class Hero:
+    # ===== ІНІЦІАЛІЗАЦІЯ =====
     def __init__(self, pos, land):
         self.land = land
 
-        # --- Герой с текстурой ---
+        # ===== Створення героя =====
         self.hero = loader.loadModel('smiley')  # сфера
-        tex = loader.loadTexture("assets/head.jpg")  # текстура лица
+        tex = loader.loadTexture("assets/head.jpg")  # текстура обличчя
         self.hero.setTexture(tex, 1)
         self.hero.setScale(0.3)
         self.hero.setPos(pos)
         self.hero.reparentTo(render)
 
+        # ===== Камера та події =====
         self.cameraBind()
         self.accept_events()
 
+        # ===== Параметри руху =====
         self.speed = 7
         self.sensitivity = 0.13
-
-        # параметры движения
         self.vz = 0
         self.gravity = -10
         self.jump_speed = 5
         self.on_ground = False
+        self.run_speed = 2
 
-        # питомец
+        # ===== Питомец =====
         self.pet = None
-
-        self.run_speed = 2  # множитель бега
 
         self.centerMouse()
         taskMgr.add(self.update_camera, "update_camera")
         taskMgr.add(self.update_movement, "update_movement")
-        taskMgr.add(self.update_pet, "update_pet")  # движение питомца
+        taskMgr.add(self.update_pet, "update_pet")
 
-    # ---------- КАМЕРА ----------
+    # ===== Питомец =====
     def set_pet(self):
-        """Создание питомца рядом с героем"""
         if not self.pet:
             pos = self.hero.getPos() + Vec3(1, 1, 0)
             self.pet = loader.loadModel("panda")
             self.pet.setScale(0.1)
             self.pet.setPos(pos)
             self.pet.reparentTo(render)
-            print("Питомец создан ✅")
+            print("Питомец створений ✅")
         else:
-            print("Питомец уже есть")
+            print("Питомец вже є")
 
     def update_pet(self, task):
-        """Питомец идёт за героем"""
         if self.pet:
             hero_pos = self.hero.getPos()
             pet_pos = self.pet.getPos()
@@ -84,8 +82,8 @@ class Hero:
                 self.pet.lookAt(self.hero)
         return task.cont
 
+    # ===== Камера =====
     def cameraBind(self):
-        """Привязка камеры к герою (вид от первого лица)."""
         base.disableMouse()
         base.camera.setH(180)
         base.camera.reparentTo(self.hero)
@@ -93,7 +91,6 @@ class Hero:
         self.cameraOn = True
 
     def cameraUp(self):
-        """Свободный полёт камерой."""
         pos = self.hero.getPos()
         base.mouseInterfaceNode.setPos(-pos[0], -pos[1], -pos[2] - 3)
         base.camera.reparentTo(render)
@@ -104,7 +101,6 @@ class Hero:
         self.cameraOn = False
 
     def changeView(self):
-        """Переключение вида камеры."""
         if self.cameraOn:
             self.cameraUp()
         else:
@@ -128,7 +124,7 @@ class Hero:
         base.win.requestProperties(wp)
         base.win.movePointer(0, base.win.getXSize()//2, base.win.getYSize()//2)
 
-    # ---------- ДВИЖЕНИЕ ----------
+    # ===== Рух =====
     def update_movement(self, task):
         dt = globalClock.getDt()
         direction = Vec3(0, 0, 0)
@@ -149,7 +145,7 @@ class Hero:
             if self.land.isEmpty(target_block):
                 self.hero.setPos(new_pos)
 
-        # гравитация
+        # гравітація
         self.vz += self.gravity * dt
         new_z = self.hero.getZ() + self.vz * dt
         foot = (round(self.hero.getX()), round(self.hero.getY()), round(new_z - 0.5))
@@ -168,7 +164,7 @@ class Hero:
             self.vz = self.jump_speed
             self.on_ground = False
 
-    # ---------- СТРОИТЕЛЬСТВО / ЛОМАНИЕ ----------
+    # ===== Будівництво / Ломання =====
     def look_at(self):
         angle = self.hero.getH() % 360
         x, y, z = round(self.hero.getX()), round(self.hero.getY()), round(self.hero.getZ())
@@ -194,7 +190,7 @@ class Hero:
         pos = self.look_at()
         self.land.delBlock(pos)
 
-    # ---------- СОБЫТИЯ ----------
+    # ===== Події =====
     def accept_events(self):
         inputState.watchWithModifiers(KEY_FORWARD, KEY_FORWARD)
         inputState.watchWithModifiers(KEY_BACK, KEY_BACK)
@@ -210,5 +206,3 @@ class Hero:
         base.accept(KEY_LOAD, self.land.loadMap)
         base.accept(KEY_JUMP, self.jump)
         base.accept(KEY_SET_PET, self.set_pet)
-
-

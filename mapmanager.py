@@ -3,26 +3,29 @@ from panda3d.core import Vec3
 
 class Mapmanager():
     """ Управління карткою з різними текстурами """
+
+    # ===== Ініціалізація =====
     def __init__(self):
         # модель кубика
         self.model = 'assets/block'  # block.egg
-        # словарь текстур для разных типов блоков
+
+        # словник текстур для різних типів блоків
         self.textures = {
             "Grass": loader.loadTexture("assets/Grass.png"),
             "Dirt": loader.loadTexture("assets/Dirt.png"),
             "Cobblestone": loader.loadTexture("assets/Cobblestone.png")
         }
 
-        # создаем основной узел карты
+        # створюємо основний вузол карти
         self.startNew()
 
+    # ===== Основний вузол карти =====
     def startNew(self):
-        """Создаёт основу для новой карты"""
         self.land = render.attachNewNode("Land")
         self.pets = render.attachNewNode("Pets")
 
+    # ===== Текстури =====
     def getTextureByHeight(self, z):
-        """Выбираем текстуру по высоте блока"""
         if z == 0:
             return self.textures["Cobblestone"]
         elif z == 1 or z == 2:
@@ -30,6 +33,7 @@ class Mapmanager():
         else:
             return self.textures["Grass"]
 
+    # ===== Блоки =====
     def addBlock(self, position):
         block = loader.loadModel(self.model)
         tex = self.getTextureByHeight(int(position[2]))
@@ -40,16 +44,14 @@ class Mapmanager():
         block.reparentTo(self.land)
 
     def clear(self):
-        """Обнулює карту"""
         self.land.removeNode()
         self.pets.removeNode()
         self.startNew()
 
     def loadLand(self, filename):
-        """Создаёт карту из текстового файла"""
         self.clear()
+        y = 0
         with open(filename) as file:
-            y = 0
             for line in file:
                 x = 0
                 line = line.split(' ')
@@ -58,9 +60,11 @@ class Mapmanager():
                         self.addBlock((x, y, z0))
                     x += 1
                 y += 1
+        self.size_x = x
+        self.size_y = y
         return x, y
 
-    # --- поиск блоков и питомцев ---
+    # ===== Пошук блоків і пета =====
     def findBlocks(self, pos):
         key = f"{int(pos[0])},{int(pos[1])},{int(pos[2])}"
         return self.land.findAllMatches("=at=" + key)
@@ -68,7 +72,7 @@ class Mapmanager():
     def addPet(self, position):
         pet = loader.loadModel("panda")
         if not pet:
-            print("❌ Не удалось загрузить модель паука.")
+            print("❌ Не вдалося завантажити модель пета.")
             return
         pet.setScale(0.1)
         pet.setPos(position)
@@ -97,7 +101,7 @@ class Mapmanager():
             z += 1
         return (x, y, z)
 
-    # --- строительство / ломание ---
+    # ===== Будівництво / Ломання =====
     def buildBlock(self, pos):
         x, y, z = pos
         new = self.findHighestEmpty(pos)
@@ -109,13 +113,13 @@ class Mapmanager():
         for block in blocks:
             block.removeNode()
 
-    # --- сохранение / загрузка ---
+    # ===== Збереження / Завантаження =====
     def saveMap(self):
         blocks = self.land.getChildren()
         with open("saves/saved_map.dat", "wb") as saved_map:
             pickle.dump(len(blocks), saved_map)
             for block in blocks:
-                x,y,z = block.getPos()
+                x, y, z = block.getPos()
                 pickle.dump((int(x), int(y), int(z)), saved_map)
         print("Map Saved ✅")
 
@@ -130,4 +134,3 @@ class Mapmanager():
             print("Map Loaded ✅")
         except:
             print("Error map load ❌")
-
