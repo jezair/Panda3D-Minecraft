@@ -29,7 +29,7 @@ class Hero:
 
         # --- Герой с текстурой ---
         self.hero = loader.loadModel('smiley')  # сфера
-        tex = loader.loadTexture("head.jpg")  # текстура лица
+        tex = loader.loadTexture("assets/head.jpg")  # текстура лица
         self.hero.setTexture(tex, 1)
         self.hero.setScale(0.3)
         self.hero.setPos(pos)

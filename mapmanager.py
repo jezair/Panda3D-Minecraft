@@ -8,9 +8,9 @@ class Mapmanager():
         self.model = 'block'  # block.egg
         # словарь текстур для разных типов блоков
         self.textures = {
-            "Grass": loader.loadTexture("Grass.png"),
-            "Dirt": loader.loadTexture("Dirt.png"),
-            "Cobblestone": loader.loadTexture("Cobblestone.png")
+            "Grass": loader.loadTexture("assets/Grass.png"),
+            "Dirt": loader.loadTexture("assets/Dirt.png"),
+            "Cobblestone": loader.loadTexture("assets/Cobblestone.png")
         }
 
         # создаем основной узел карты
