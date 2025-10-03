@@ -25,7 +25,7 @@ KEY_SET_PET = "m"
 
 class Hero:
     def __init__(self, pos, land):
-        self.land = land  
+        self.land = land
         self.hero = loader.loadModel('smiley')
         self.hero.setColor(1, 0.5, 0)
         self.hero.setScale(0.3)
@@ -49,7 +49,7 @@ class Hero:
         self.on_ground = False
 
         # питомец
-        self.pet = None  
+        self.pet = None
 
         self.run_speed = 2    # множитель бега
 
