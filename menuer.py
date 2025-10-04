@@ -8,6 +8,7 @@ class Menuer(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
 
+
         #adding the text tot the menuer
         self.Label = DirectLabel(text = "Starting screen", scale = 0.15, pos = Vec3(0, 0, 0.7), text_bg = (0, 0, 0, 1),
                                  text_fg = (1, 1, 1, 1), textMayChange = 1)
