@@ -12,10 +12,10 @@ class Menuer(ShowBase):
         #adding the text tot the menuer
         self.Label = DirectLabel(text = "Starting screen", scale = 0.15, pos = Vec3(0, 0, 0.7), text_bg = (0, 0, 0, 1),
                                  text_fg = (1, 1, 1, 1), textMayChange = 1)
-        #le button for GAME
+        #the button for GAME
         self.Button_game = DirectButton(text = "Turn on the launcher", scale = 0.15, pos = Vec3(0, 0, 0.2), text_bg = (0, 0.5, 0, 1),
                                    text_fg = (1, 1, 1, 1), textMayChange = 1, command = self.begin_game)
-        # le button for QUIT
+        #the button for QUIT
         self.Button_quit = DirectButton(text="Exit", scale=0.15, pos=Vec3(0, 0, -0.5), text_bg=(0, 0.5, 0, 1),
                                    text_fg=(1, 1, 1, 1), textMayChange = 1, command=self.quit_game)
 
